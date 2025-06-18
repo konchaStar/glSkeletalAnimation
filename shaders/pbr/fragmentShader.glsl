@@ -15,8 +15,11 @@ uniform sampler2D texture_rm1;
 uniform sampler2D texture_emission1;
 
 uniform vec3 camera;
-const vec3 lPos[] = { vec3(5, 5, 5), vec3(-5, 5, 5), vec3(5, 5, -5), vec3(-5, 5, -5) };
-const vec3 lColor[] = { vec3(1.f, 0.5f, 0.5f), vec3(0.5f, 1.f, 0.5f), vec3(0.5f, 0.5f, 1.f), vec3(1.f, 0.5f, 1.f) };
+//const vec3 lPos[] = { vec3(5, 5, 5), vec3(-5, 5, 5), vec3(5, 5, -5), vec3(-5, 5, -5) };
+//const vec3 lColor[] = { vec3(1.f, 0.5f, 0.5f), vec3(0.5f, 1.f, 0.5f), vec3(0.5f, 0.5f, 1.f), vec3(1.f, 0.5f, 1.f) };
+
+uniform vec3 lPos[4];
+uniform vec3 lColor[4];
 
 vec3 fresnelSchlick(float VdotH, vec3 F0) {
     float t = 1 - VdotH;
@@ -121,7 +124,7 @@ void main() {
 
         vec3 spec = reflectance * distrib * visib;
         float dist = distance(fPos, lPos[i]);
-        vec3 irradiance = 1000.f * lColor[i] * NdotL / (dist * dist);
+        vec3 irradiance = 500.f * lColor[i] * NdotL / (dist * dist);
         color += ((vec3(1.f) - reflectance) * diffuse + spec) * irradiance;
     }
 

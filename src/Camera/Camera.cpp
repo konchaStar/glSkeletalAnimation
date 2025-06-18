@@ -1,12 +1,11 @@
 #include "Camera.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 Camera::Camera(float fovDeg, float aspect, float zNear, float zFar, glm::vec3 position) {
     this->projection = glm::perspective(glm::radians(fovDeg), aspect, zNear, zFar);
     this->position = position;
-    this->model = glm::lookAt(position, position - glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+    this->model = glm::lookAt(glm::vec3(0.f), glm::normalize(-position), glm::vec3(0, 1, 0));
 }
 
 void Camera::translate(glm::vec3 translation) {
@@ -35,5 +34,10 @@ glm::vec3 Camera::right() {
 
 void Camera::recalculateProjectionMatrix(float fovDeg, float aspect, float zNear, float zFar) {
     projection = glm::perspective(glm::radians(fovDeg), aspect, zNear, zFar);
+}
+
+void Camera::rotateRelatively(float angleDeg) {
+    this->position = glm::angleAxis(glm::radians(-angleDeg), up()) * this->position;
+    this->model = model * glm::mat4_cast(glm::angleAxis(glm::radians(angleDeg), up()));
 }
 

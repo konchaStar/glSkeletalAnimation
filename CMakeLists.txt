@@ -71,6 +71,8 @@ add_executable(animation src/main.cpp
         src/Utils/Logger.h
         src/Animator/AnimationMixer.cpp
         src/Animator/AnimationMixer.h
+        src/Light/DirectionalLight.h
+        src/Light/PointLight.h
 )
 
 target_include_directories(animation PRIVATE
