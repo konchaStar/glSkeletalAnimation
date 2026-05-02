@@ -21,8 +21,8 @@
 #include "Light/PointLight.h"
 #include "Light/DirectionalLight.h"
 
-int WINDOW_WIDTH = 1200;
-int WINDOW_HEIGHT = 800;
+int WINDOW_WIDTH = 1920;
+int WINDOW_HEIGHT = 1080;
 
 auto *camera = new Camera(45.f, (float) WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f, 100.0f, glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
@@ -49,7 +49,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
 void renderLights(Model *lightSourceModel, ShaderProgram sp);
 
-bool fullScreen = false;
+bool fullScreen = true;
 float speed = 1.0f;
 float scale = 1.f;
 float angleY = 0.f;
@@ -75,7 +75,7 @@ std::vector<PointLight> lights = std::vector<PointLight>();
 bool lmb = false;
 bool rmb = false;
 Model *model = nullptr;
-const char* lightNums[] = {"1", "2", "3", "4"};
+const char *lightNums[] = {"1", "2", "3", "4"};
 
 int main() {
     glfwInit();
@@ -113,8 +113,8 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    const char* vendor = (const char*)glGetString(GL_VENDOR);
-    const char* renderer = (const char*)glGetString(GL_RENDERER);
+    const char *vendor = (const char *) glGetString(GL_VENDOR);
+    const char *renderer = (const char *) glGetString(GL_RENDERER);
     std::cout << "Vendor: " << vendor << "\nRenderer: " << renderer << std::endl;
 
     shaderNames.push_back("Diffuse shader");
@@ -147,7 +147,6 @@ int main() {
     float lastFrame = glfwGetTime();
     float deltaTime = 0.f;
 
-
     Animator *animator = nullptr;
     AnimationMixer *mixer = nullptr;
 
@@ -171,6 +170,64 @@ int main() {
     lights.push_back({glm::vec3(-5.f, 5.f, 5.f), glm::vec3(1.f, 1.f, 1.f)});
     lights.push_back({glm::vec3(-5.f, 5.f, -5.f), glm::vec3(1.f, 1.f, 1.f)});
     lights.push_back({glm::vec3(5.f, 5.f, -5.f), glm::vec3(1.f, 1.f, 1.f)});
+
+
+
+
+
+
+
+
+    float quadVertices[] = {
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
+
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
+            1.0f,  1.0f,  1.0f, 1.0f
+    };
+    unsigned int quadVAO = 0;
+    unsigned int quadVBO = 0;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    ShaderProgram ppSP = ShaderProgram();
+    ppSP.loadVertexShader("../shaders/postProcessing/vertexShader.glsl");
+    ppSP.loadFragmentShader("../shaders/postProcessing/fragmentShader.glsl");
+    ppSP.link();
+
+    unsigned int ppFBO = 0;
+    glGenFramebuffers(1, &ppFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ppFBO);
+    unsigned int ppText;
+    glGenTextures(1, &ppText);
+    glBindTexture(GL_TEXTURE_2D, ppText);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ppText, 0);
+    unsigned int ppDepthStencilText;
+    glGenTextures(1, &ppDepthStencilText);
+    glBindTexture(GL_TEXTURE_2D, ppDepthStencilText);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
+                 WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_STENCIL,
+                 GL_UNSIGNED_INT_24_8, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, ppDepthStencilText, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
+
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
@@ -328,6 +385,10 @@ int main() {
             ImGuiFileDialog::Instance()->Close();
         }
 
+        glBindFramebuffer(GL_FRAMEBUFFER, ppFBO);
+//        glViewport(0, 0, 640, 360);
+        glClearColor(bgColor.x, bgColor.y, bgColor.z, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderLights(&bone, lightShaderProgram);
         if (model && animator) {
             glm::mat4 modelMat = glm::mat4(1.f);
@@ -380,13 +441,26 @@ int main() {
                     glUniformMatrix4fv(glGetUniformLocation(boneSPId, "proj"), 1, GL_FALSE,
                                        value_ptr(camera->projection));
                     glUniformMatrix4fv(glGetUniformLocation(boneSPId, "transform"), 1, GL_FALSE, value_ptr(boneModel));
-                    boneShaderProgram.setInt("selected", boneIndex == i && drawBonesInfluence ? 1 : 0);
-                    bone.Draw(boneShaderProgram);
+                    if (!drawBonesInfluence || boneIndex == i) {
+                        bone.Draw(boneShaderProgram);
+                    }
                 }
                 glEnable(GL_DEPTH_TEST);
                 ShaderProgram::unbind();
             }
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        ppSP.use();
+        ppSP.setFloat("time", glfwGetTime());
+        glDisable(GL_DEPTH_TEST);
+        glBindVertexArray(quadVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, ppText);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_DEPTH_TEST);
+        ShaderProgram::unbind();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -496,7 +570,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
     if (lmb && !ImGui::GetIO().WantCaptureMouse) {
         camera->rotateRelatively(xoffset / 10.f);
     }
-    if(rmb && !ImGui::GetIO().WantCaptureMouse) {
+    if (rmb && !ImGui::GetIO().WantCaptureMouse) {
         angleY += xoffset / 20.f;
     }
 }
@@ -513,7 +587,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
             lmb = false;
         }
     }
-    if(button == GLFW_MOUSE_BUTTON_RIGHT) {
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (action == GLFW_PRESS) {
             rmb = true;
         } else if (action == GLFW_RELEASE) {

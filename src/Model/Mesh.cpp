@@ -93,3 +93,12 @@ void Mesh::Draw(ShaderProgram &shaderProgram) {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
+
+Mesh::~Mesh() {
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+//    for (unsigned int i; i < textures.size(); i++) {
+//        glDeleteTextures(1, &textures[i].id);
+//    }
+}
